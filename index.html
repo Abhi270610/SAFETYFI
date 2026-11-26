@@ -1,0 +1,801 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#081426">
+  <title>SAFETY-FI Pro | Emergency Safety Dashboard</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+  <style>
+    :root {
+      --bg: #081426;
+      --panel: #101f35;
+      --panel2: #142640;
+      --border: #263b57;
+      --text: #edf4ff;
+      --muted: #9aacc4;
+      --blue: #3987ff;
+      --green: #27c78b;
+      --red: #ff5364;
+      --yellow: #f6bd4b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, Arial, sans-serif;
+      min-height: 100vh;
+    }
+
+    button, input {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 5%;
+      border-bottom: 1px solid var(--border);
+      background: #0b192d;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 43px;
+      height: 43px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, #347eff, #25c99a);
+      font-size: 23px;
+      font-weight: 800;
+    }
+
+    .brand h1 {
+      font-size: 20px;
+      letter-spacing: .5px;
+    }
+
+    .brand p {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    .top-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--yellow);
+      display: inline-block;
+    }
+
+    .dot.online {
+      background: var(--green);
+    }
+
+    .dot.offline {
+      background: var(--red);
+    }
+
+    .container {
+      width: min(1250px, 92%);
+      margin: 30px auto;
+    }
+
+    .notice {
+      padding: 13px 16px;
+      border: 1px solid #795c27;
+      border-radius: 12px;
+      background: #332817;
+      color: #ffe3a4;
+      font-size: 12px;
+      line-height: 1.6;
+      margin-bottom: 22px;
+    }
+
+    .welcome {
+      margin-bottom: 24px;
+    }
+
+    .welcome h2 {
+      font-size: clamp(23px, 4vw, 32px);
+      margin-bottom: 8px;
+    }
+
+    .welcome p {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 17px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-width: 0;
+    }
+
+    .card-title {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+
+    .big-value {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      overflow-wrap: anywhere;
+    }
+
+    .sub-value {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .section-title {
+      font-size: 17px;
+      margin-bottom: 15px;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+
+    #map {
+      height: 340px;
+      width: 100%;
+      border-radius: 11px;
+      background: #17283d;
+      z-index: 1;
+    }
+
+    .map-info {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .field-label {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin: 13px 0 7px;
+    }
+
+    .field {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      background: #09172a;
+      color: white;
+      border-radius: 9px;
+      outline: none;
+    }
+
+    .field:focus {
+      border-color: var(--blue);
+    }
+
+    .btn {
+      padding: 11px 15px;
+      border: none;
+      border-radius: 9px;
+      color: white;
+      background: var(--blue);
+      font-weight: 700;
+      font-size: 12px;
+      margin-top: 12px;
+      transition: .2s;
+    }
+
+    .btn:hover {
+      filter: brightness(1.12);
+    }
+
+    .btn-green {
+      background: #168f69;
+    }
+
+    .btn-red {
+      background: #d83c4d;
+    }
+
+    .btn-secondary {
+      background: #304763;
+    }
+
+    .btn-full {
+      width: 100%;
+    }
+
+    .status-line {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 12px;
+      margin: 12px 0;
+      color: var(--muted);
+    }
+
+    .sensor-box {
+      background: #09172a;
+      border: 1px solid var(--border);
+      padding: 13px;
+      border-radius: 10px;
+      margin-top: 14px;
+      min-height: 75px;
+    }
+
+    .sensor-box pre {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font-size: 11px;
+      line-height: 1.7;
+      color: #b9d7ff;
+    }
+
+    .emergency-card {
+      border-color: #75303d;
+      background: linear-gradient(145deg, #271925, #101f35);
+    }
+
+    .emergency-card p {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .emergency-card .btn {
+      font-size: 14px;
+      padding: 15px;
+    }
+
+    .activity-list {
+      max-height: 250px;
+      overflow-y: auto;
+    }
+
+    .activity-item {
+      border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .activity-item:last-child {
+      border-bottom: none;
+    }
+
+    .activity-time {
+      color: var(--muted);
+      font-size: 10px;
+      margin-top: 4px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 25px 10px;
+      color: var(--muted);
+      font-size: 11px;
+      border-top: 1px solid var(--border);
+      margin-top: 30px;
+    }
+
+    @media (max-width: 850px) {
+      .grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .container {
+        width: 94%;
+      }
+
+      .topbar {
+        padding: 15px 3%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-icon">S</div>
+    <div>
+      <h1>SAFETY-FI Pro</h1>
+      <p>SMART SAFETY MONITORING PROTOTYPE</p>
+    </div>
+  </div>
+
+  <div class="top-status">
+    <span class="dot online"></span>
+    <span>Application running</span>
+    <span id="clock">--:--:--</span>
+  </div>
+</header>
+
+<main class="container">
+
+  <div class="notice">
+    <strong>Prototype notice:</strong>
+    This application is for demonstration and testing only.
+    It does not automatically contact emergency services or dispatch
+    emergency teams. For a real emergency in India, contact 112 directly.
+  </div>
+
+  <section class="welcome">
+    <h2>Emergency Safety Dashboard</h2>
+    <p>Monitor GPS information, test your ESP32 connection and review system activity.</p>
+  </section>
+
+  <section class="grid">
+
+    <div class="card">
+      <div class="card-title">GPS STATUS</div>
+      <div class="big-value" id="gpsStatus">Not started</div>
+      <div class="sub-value" id="gpsDetails">Waiting for location permission</div>
+      <button class="btn btn-green btn-full" onclick="startGPS()">
+        Enable Live GPS
+      </button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">ESP32 STATUS</div>
+      <div class="big-value" id="espStatus">Not connected</div>
+      <div class="sub-value" id="espDetails">Connection not tested</div>
+      <button class="btn btn-full" onclick="testESP32()">
+        Test ESP32 Connection
+      </button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">SYSTEM TIME</div>
+      <div class="big-value" id="systemTime">--:--:--</div>
+      <div class="sub-value" id="systemDate">Loading date</div>
+      <div class="status-line">
+        <span class="dot online"></span>
+        Local dashboard active
+      </div>
+    </div>
+
+  </section>
+
+  <section class="main-grid">
+
+    <div class="card">
+      <h3 class="section-title">Live GPS Tracking Map</h3>
+      <div id="map"></div>
+      <div class="map-info" id="mapInfo">
+        Your location will appear here after GPS permission is granted.
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 class="section-title">ESP32 Hardware Connection</h3>
+
+      <p class="sub-value">
+        Enter the status endpoint supported by your SAFETY-FI ESP32 firmware.
+        The endpoint must return JSON data.
+      </p>
+
+      <label class="field-label" for="espUrl">ESP32 status URL</label>
+      <input
+        class="field"
+        id="espUrl"
+        type="url"
+        placeholder="http://ESP32-IP/status"
+      >
+
+      <button class="btn btn-green btn-full" onclick="testESP32()">
+        Connect / Test Device
+      </button>
+
+      <div class="status-line">
+        <span class="dot offline" id="espDot"></span>
+        <span id="espConnectionText">Not connected</span>
+      </div>
+
+      <div class="sensor-box">
+        <div class="card-title">RECEIVED SENSOR DATA</div>
+        <pre id="sensorData">No sensor data received yet.</pre>
+      </div>
+
+      <p class="sub-value" style="margin-top:12px">
+        The ESP32 firmware must support the URL above and allow browser
+        requests (CORS). The exact endpoint depends on your firmware.
+      </p>
+    </div>
+
+  </section>
+
+  <section class="main-grid">
+
+    <div class="card">
+      <h3 class="section-title">Location Information</h3>
+
+      <div class="card-title">LATITUDE</div>
+      <div class="big-value" id="latitude">Not available</div>
+
+      <div class="card-title" style="margin-top:18px">LONGITUDE</div>
+      <div class="big-value" id="longitude">Not available</div>
+
+      <div class="card-title" style="margin-top:18px">GPS ACCURACY</div>
+      <div class="big-value" id="accuracy">Not available</div>
+
+      <button class="btn btn-secondary btn-full" onclick="stopGPS()">
+        Stop GPS Tracking
+      </button>
+    </div>
+
+    <div class="card emergency-card">
+      <h3 class="section-title">Emergency Assistance</h3>
+
+      <p>
+        Use this button only when you genuinely need emergency assistance.
+        It will ask for confirmation before opening your device's phone
+        dialler for India's emergency number.
+      </p>
+
+      <button class="btn btn-red btn-full" onclick="confirmEmergency()">
+        CALL EMERGENCY NUMBER 112
+      </button>
+
+      <p style="margin-top:12px">
+        This action does not send an automatic SOS message or alert
+        emergency responders through this application.
+      </p>
+    </div>
+
+  </section>
+
+  <section class="card">
+    <h3 class="section-title">System Activity Log</h3>
+
+    <div class="activity-list" id="activityLog">
+      <div class="activity-item">
+        SAFETY-FI Pro dashboard initialised.
+        <div class="activity-time">Application startup</div>
+      </div>
+    </div>
+
+    <button class="btn btn-secondary" onclick="clearLog()">
+      Clear Activity Log
+    </button>
+  </section>
+
+</main>
+
+<footer>
+  SAFETY-FI Pro | Student Demonstration Prototype<br>
+  GPS and hardware functionality require compatible devices and permissions.
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+  // ---------------------------------------
+  // SAFETY-FI PRO
+  // Browser-based demonstration application
+  // ---------------------------------------
+
+  let map = null;
+  let userMarker = null;
+  let gpsWatchId = null;
+  let lastLocation = null;
+
+  const $ = (id) => document.getElementById(id);
+
+  function logActivity(message) {
+    const log = $("activityLog");
+    const item = document.createElement("div");
+    const messageText = document.createElement("div");
+    const timeText = document.createElement("div");
+
+    item.className = "activity-item";
+    messageText.textContent = message;
+    timeText.className = "activity-time";
+    timeText.textContent = new Date().toLocaleString();
+
+    item.appendChild(messageText);
+    item.appendChild(timeText);
+    log.prepend(item);
+
+    while (log.children.length > 50) {
+      log.removeChild(log.lastChild);
+    }
+  }
+
+  function updateClock() {
+    const now = new Date();
+
+    $("clock").textContent = now.toLocaleTimeString();
+    $("systemTime").textContent = now.toLocaleTimeString();
+    $("systemDate").textContent = now.toLocaleDateString();
+  }
+
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  // ---------------------------------------
+  // MAP INITIALISATION
+  // ---------------------------------------
+
+  function initMap() {
+    if (typeof L === "undefined") {
+      $("mapInfo").textContent =
+        "Map library unavailable. GPS coordinates can still be displayed.";
+      return;
+    }
+
+    map = L.map("map").setView([22.9734, 78.6569], 5);
+
+    L.tileLayer(
+      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      {
+        attribution: "&copy; OpenStreetMap contributors",
+        maxZoom: 19
+      }
+    ).addTo(map);
+
+    logActivity("Map initialised.");
+  }
+
+  initMap();
+
+  // ---------------------------------------
+  // GPS TRACKING
+  // ---------------------------------------
+
+  function startGPS() {
+    if (!navigator.geolocation) {
+      $("gpsStatus").textContent = "Unavailable";
+      $("gpsDetails").textContent =
+        "This browser does not support GPS location.";
+      logActivity("GPS unavailable in this browser.");
+      return;
+    }
+
+    if (gpsWatchId !== null) {
+      logActivity("GPS tracking is already active.");
+      return;
+    }
+
+    $("gpsStatus").textContent = "Requesting permission";
+    $("gpsDetails").textContent =
+      "Please allow location access in your browser.";
+
+    gpsWatchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        const accuracy = position.coords.accuracy;
+
+        lastLocation = { lat, lng, accuracy };
+
+        $("gpsStatus").textContent = "Active";
+        $("gpsDetails").textContent = "Location received successfully.";
+
+        $("latitude").textContent = lat.toFixed(6);
+        $("longitude").textContent = lng.toFixed(6);
+        $("accuracy").textContent =
+          Math.round(accuracy) + " metres";
+
+        $("mapInfo").textContent =
+          "Current browser location | Accuracy: " +
+          Math.round(accuracy) + " metres";
+
+        if (map) {
+          if (!userMarker) {
+            userMarker = L.marker([lat, lng]).addTo(map);
+            userMarker.bindPopup("Your reported device location");
+          } else {
+            userMarker.setLatLng([lat, lng]);
+          }
+
+          map.setView([lat, lng], 16);
+        }
+
+        logActivity("GPS location updated.");
+      },
+
+      (error) => {
+        gpsWatchId = null;
+        $("gpsStatus").textContent = "GPS error";
+        $("gpsDetails").textContent = error.message;
+        logActivity("GPS error: " + error.message);
+      },
+
+      {
+        enableHighAccuracy: true,
+        maximumAge: 5000,
+        timeout: 15000
+      }
+    );
+
+    logActivity("GPS tracking requested.");
+  }
+
+  function stopGPS() {
+    if (gpsWatchId !== null) {
+      navigator.geolocation.clearWatch(gpsWatchId);
+      gpsWatchId = null;
+    }
+
+    $("gpsStatus").textContent = "Stopped";
+    $("gpsDetails").textContent = "GPS tracking has been stopped.";
+
+    logActivity("GPS tracking stopped.");
+  }
+
+  // ---------------------------------------
+  // ESP32 CONNECTION
+  // ---------------------------------------
+
+  async function testESP32() {
+    const url = $("espUrl").value.trim();
+
+    if (!url) {
+      $("espStatus").textContent = "URL required";
+      $("espDetails").textContent =
+        "Enter the ESP32 status endpoint first.";
+
+      logActivity("ESP32 test skipped: no URL entered.");
+      return;
+    }
+
+    try {
+      const parsed = new URL(url);
+
+      if (!["http:", "https:"].includes(parsed.protocol)) {
+        throw new Error("Only HTTP or HTTPS URLs are supported.");
+      }
+    } catch (error) {
+      $("espStatus").textContent = "Invalid URL";
+      $("espDetails").textContent = error.message;
+      return;
+    }
+
+    $("espStatus").textContent = "Connecting...";
+    $("espDetails").textContent = "Waiting for ESP32 response.";
+    $("espConnectionText").textContent = "Testing connection...";
+    $("espDot").className = "dot";
+
+    $("sensorData").textContent = "Waiting for response...";
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 7000);
+
+    try {
+      const response = await fetch(url, {
+        method: "GET",
+        cache: "no-store",
+        signal: controller.signal
+      });
+
+      if (!response.ok) {
+        throw new Error("HTTP error " + response.status);
+      }
+
+      const data = await response.json();
+
+      $("espStatus").textContent = "Connected";
+      $("espDetails").textContent = "ESP32 returned a JSON response.";
+      $("espConnectionText").textContent = "Device responded successfully.";
+      $("espDot").className = "dot online";
+
+      $("sensorData").textContent =
+        JSON.stringify(data, null, 2);
+
+      logActivity("ESP32 returned a successful response.");
+
+    } catch (error) {
+      $("espStatus").textContent = "Connection failed";
+      $("espDetails").textContent = error.message;
+      $("espConnectionText").textContent =
+        "Unable to read device status.";
+      $("espDot").className = "dot offline";
+
+      $("sensorData").textContent =
+        "No valid response received.\n\n" +
+        "Check the ESP32 IP address, endpoint, Wi-Fi connection, " +
+        "firmware and browser CORS settings.";
+
+      logActivity("ESP32 connection failed: " + error.message);
+
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  // ---------------------------------------
+  // EMERGENCY CALL
+  // ---------------------------------------
+
+  function confirmEmergency() {
+    const confirmed = confirm(
+      "Are you facing a genuine emergency?\n\n" +
+      "Press OK to open your phone dialler for 112.\n\n" +
+      "This application does not automatically send your location " +
+      "or alert emergency services."
+    );
+
+    if (confirmed) {
+      logActivity("User selected the emergency call action.");
+      window.location.href = "tel:112";
+    }
+  }
+
+  // ---------------------------------------
+  // ACTIVITY LOG
+  // ---------------------------------------
+
+  function clearLog() {
+    $("activityLog").replaceChildren();
+    logActivity("Activity log cleared.");
+  }
+
+  logActivity("SAFETY-FI Pro ready.");
+</script>
+
+</body>
+</html>
